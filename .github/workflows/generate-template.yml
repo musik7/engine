@@ -1,0 +1,26 @@
+name: Clone hello-jni app folder
+on: workflow_dispatch
+
+jobs:
+  clone:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sparse clone folder app doang
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/android/ndk-samples
+          cd ndk-samples
+          git sparse-checkout set hello-jni/app
+          
+          mv hello-jni/app/* ../
+          cd ..
+          rm -rf ndk-samples
+
+      - name: Commit ke repo lu
+        run: |
+          git config user.name "bot"
+          git config user.email "bot@github.com"
+          git add .
+          git commit -m "Clone hello-jni/app" || exit 0
+          git push
