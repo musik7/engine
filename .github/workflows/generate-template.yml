@@ -9,33 +9,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # penting! biar bisa pull/push
+          fetch-depth: 0
 
-      - name: Sparse clone folder app doang
+      - name: Download folder hello-jni/app
         run: |
-          git clone --depth 1 --filter=blob:none --sparse https://github.com/android/ndk-samples temp
-          cd temp
-          git sparse-checkout set hello-jni/app
-          cp -r hello-jni/app/*../
-          cd..
-          rm -rf temp
+          mkdir -p app
+          curl -L https://api.github.com/repos/android/ndk-samples/contents/hello-jni/app?ref=main -o files.json
+          sudo apt-get install jq -y
+          jq -r '.[] |.download_url' files.json | while read url; do
+            fname=$(basename $url)
+            curl -L $url -o app/$fname
+          done
 
-      - name: Commit & push changes
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
+          # Download subfolders
+          curl -L https://api.github.com/repos/android/ndk-samples/contents/hello-jni/app/src -o src.json
+          mkdir -p app/src
+          jq -r '.[] |.download_url' src.json | while read url; do
+            fname=$(basename $url)
+            curl -L $url -o app/src/$fname
+          done
+
+      - name: Commit files ke repo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git add --all
-          git commit -m "Clone hello-jni/app from NDK samples" || echo "No changes"
-
-          git remote set-url origin "https://${GITHUB_TOKEN}@github.com/${REPO}.git"
-
-          BRANCH="${GITHUB_REF#refs/heads/}"
-          if [ -z "$BRANCH" ]; then
-            BRANCH="main"
-          fi
-
-          git push origin "HEAD:${BRANCH}" --force
+          git add app/
+          git commit -m "Add hello-jni/app folder" || exit 0
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
