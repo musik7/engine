@@ -4,6 +4,8 @@ on: workflow_dispatch
 jobs:
   clone:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -12,15 +14,16 @@ jobs:
           git clone --depth 1 --filter=blob:none --sparse https://github.com/android/ndk-samples
           cd ndk-samples
           git sparse-checkout set hello-jni/app
-          
-          mv hello-jni/app/* ../
-          cd ..
+          mv hello-jni/app/*../
+          cd..
           rm -rf ndk-samples
 
       - name: Commit ke repo lu
         run: |
-          git config user.name "bot"
-          git config user.email "bot@github.com"
-          git add .
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add.
           git commit -m "Clone hello-jni/app" || exit 0
           git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
