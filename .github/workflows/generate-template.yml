@@ -34,7 +34,6 @@ jobs:
 
           git commit -m "Clone hello-jni/app"
 
-          # Push pake token biar aman
           git remote set-url origin "https://${GITHUB_TOKEN}@github.com/${REPO}.git"
 
           BRANCH="${GITHUB_REF#refs/heads/}"
@@ -42,4 +41,5 @@ jobs:
             BRANCH="main"
           fi
 
+          git pull origin "$BRANCH" --rebase --allow-unrelated-histories
           git push origin "HEAD:${BRANCH}"
